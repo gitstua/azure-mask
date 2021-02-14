@@ -1,12 +1,30 @@
 const isMaskedKeyName = 'isMasked';
 const maskEnabledClassName = 'az-mask-enabled';
-const sensitiveDataRegex = /^([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})$/;
+const sensitiveDataRegex = /^([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{8}-[a-z0-9]{12})$/;
 /* ** Original regex prior to 2019-04-18 **
  * const sensitiveDataRegex = /^\s*([a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12})|((([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,})))\s*$/;
  *
  */
 const sensitiveDataClassName = 'azdev-sensitive';
-const blurCss = 'filter: blur(10px); pointer-events: none;';
+//const blurCss = 'filter: blur(10px); pointer-events: none;';
+const blurCss = 'font-family: "Redacted Script"; border-left: double; letter-spacing: 0.5em;filter: blur(1px); pointer-events: none;';
+
+const neverMaskAriaLabels=[
+"Storage account name", 
+"Subscription name", 
+"Resource Group",
+"Resource group",
+"diagnostic logs",
+"host name",
+//"Resource ID",
+//SQL 
+"Server name", "Collation",
+//App Service
+"IP address",
+"IP Address",
+"deployment user"
+];
+
 const tagNamesToMatch = ['DIV']; // uppercase
 
 // add CSS style to blur
@@ -20,6 +38,8 @@ style.sheet.insertRule(
 style.sheet.insertRule(
   `.${maskEnabledClassName} .fxs-avatarmenu-username { display: none }`
 ); // hide name instead of blurring
+
+
 style.sheet.insertRule(
   `.${maskEnabledClassName} input.azc-bg-light { ${blurCss} }`
 ); // input boxes used for keys, connection strings, etc
@@ -33,6 +53,15 @@ style.sheet.insertRule(
   `.${maskEnabledClassName} .fxs-mecontrol-flyout { ${blurCss} }`
 ); // user account menu
 
+//Never mask based on aria-label text list
+neverMaskAriaLabels.forEach(function(ariaLabel) { 
+  console.log(ariaLabel);
+  style.sheet.insertRule(
+    `.${maskEnabledClassName} input.azc-bg-light[aria-label*="${ariaLabel}"] 
+  {  font-family: inherit;letter-spacing: inherit;filter: inherit; pointer-events: inherit;}`
+  ); // input boxes used for keys, connection strings, etc
+});
+
 getStoredMaskedStatus(isMasked => {
   isMasked
     ? document.body.classList.add(maskEnabledClassName)
@@ -41,19 +70,22 @@ getStoredMaskedStatus(isMasked => {
 
 // add class to elements already on the screen
 Array.from(document.querySelectorAll(tagNamesToMatch.join()))
-  .filter(e => shouldCheckContent(e) && sensitiveDataRegex.test(e.textContent))
+  //.filter(e => shouldCheckContent(e) && sensitiveDataRegex.test(e.textContent))
+  .filter(e => shouldCheckContent(e) && containsSensitiveData(e))
   .forEach(e => e.classList.add(sensitiveDataClassName));
 
 // add class to elements that are added to DOM later
 const observer = new MutationObserver(mutations => {
   mutations
     .filter(
-      m =>
+      m =>{
         shouldCheckContent(m.target, m.type) &&
         sensitiveDataRegex.test(m.target.textContent.trim())
+      }
     )
     .forEach(m => {
       const node = m.type === 'characterData' ? m.target.parentNode : m.target;
+      console.log(m.target);
       if (node.classList) {
         node.classList.add('azdev-sensitive');
       }
@@ -73,6 +105,12 @@ function shouldCheckContent(target, mutationType) {
     (target && tagNamesToMatch.some(tn => tn === target.tagName))
   );
 }
+
+function containsSensitiveData(e) {
+  console.log(e.textContent);
+  return sensitiveDataRegex.test(e.textContent);
+}
+
 
 function getStoredMaskedStatus(callback) {
   chrome.storage.local.get(isMaskedKeyName, items => {
