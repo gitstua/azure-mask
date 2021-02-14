@@ -16,13 +16,22 @@ const neverMaskAriaLabels=[
 "Resource group",
 "diagnostic logs",
 "host name",
-//"Resource ID",
+"Resource ID",
+"resource ID",
 //SQL 
 "Server name", "Collation",
 //App Service
 "IP address",
 "IP Address",
-"deployment user"
+"deployment user",
+//storage
+"Blob service",
+"Table service",
+"File service",
+"Queue service",
+"Data Lake storage",
+"Static website",
+
 ];
 
 const tagNamesToMatch = ['DIV']; // uppercase
@@ -55,12 +64,14 @@ style.sheet.insertRule(
 
 //Never mask based on aria-label text list
 neverMaskAriaLabels.forEach(function(ariaLabel) { 
-  console.log(ariaLabel);
+  //console.warn(ariaLabel);
   style.sheet.insertRule(
     `.${maskEnabledClassName} input.azc-bg-light[aria-label*="${ariaLabel}"] 
   {  font-family: inherit;letter-spacing: inherit;filter: inherit; pointer-events: inherit;}`
   ); // input boxes used for keys, connection strings, etc
 });
+
+//console.warn(style.sheet);
 
 getStoredMaskedStatus(isMasked => {
   isMasked
@@ -70,8 +81,7 @@ getStoredMaskedStatus(isMasked => {
 
 // add class to elements already on the screen
 Array.from(document.querySelectorAll(tagNamesToMatch.join()))
-  //.filter(e => shouldCheckContent(e) && sensitiveDataRegex.test(e.textContent))
-  .filter(e => shouldCheckContent(e) && containsSensitiveData(e))
+  .filter(e => shouldCheckContent(e) && sensitiveDataRegex.test(e.textContent))
   .forEach(e => e.classList.add(sensitiveDataClassName));
 
 // add class to elements that are added to DOM later
@@ -105,12 +115,6 @@ function shouldCheckContent(target, mutationType) {
     (target && tagNamesToMatch.some(tn => tn === target.tagName))
   );
 }
-
-function containsSensitiveData(e) {
-  console.log(e.textContent);
-  return sensitiveDataRegex.test(e.textContent);
-}
-
 
 function getStoredMaskedStatus(callback) {
   chrome.storage.local.get(isMaskedKeyName, items => {

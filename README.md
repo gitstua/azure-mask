@@ -13,6 +13,10 @@ This is a browser extension that will do its best to find and mask GUIDs (such a
 * Toggle the mask on/off and store this state
 * Apply the mask (if enabled) after Document Object Model (DOM) mutations
 
+## Requirements
+Install font from https://github.com/christiannaths/redacted-font
+Current link: https://github.com/christiannaths/redacted-font/blob/master/src/RedactedScript-Regular.ttf
+
 ## Install the Extension
 
 ### Chrome / Edge
